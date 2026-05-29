@@ -1,0 +1,58 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
+.card {
+    border: none;
+    border-radius: 12px;
+}
+.table td,
+.table th {
+    vertical-align: middle;
+}
+/*body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #222;
+}
+header{
+    background: #0d6efd;
+    color: white;
+    padding: 24px;
+    text-align: center;
+}
+main{
+    width: 90%;
+    margin: 30px auto;
+}
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+table {
+    width:100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #0d6efd;
+    color: white;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.status-confirmado {
+    color: green;
+    font-weight: bold;
+}
+.status-pendente{
+    color: orange;
+    font-weight: bold;
+}*/
