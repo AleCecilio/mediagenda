@@ -1,3 +1,27 @@
+var modalAgendamento;
+
+document.addEventListener('DOMContentLoaded', function() {
+    modalAgendamento = new bootstrap.Modal(
+        document.getElementById('modalAgendamento')
+    );
+
+    pesquisarAgendamentos();
+});
+
+function abrirNovoAgendamento() {
+
+    document.getElementById('tituloModal').innerText = 'Novo Agendamento';
+    document.getElementById('agendamentoId').value = '';
+    document.getElementById('paciente').value = '';
+    document.getElementById('medico_id').value = '';
+    document.getElementById('especialidade_id').value = '';
+    document.getElementById('data').value = '';
+    document.getElementById('horario').value = '';
+    document.getElementById('status').value = 'Confirmado';
+
+    modalAgendamento.show();
+}
+
 function mostrarSobre(){
     Swal.fire({
         title: 'MediAgenda NodeJS',

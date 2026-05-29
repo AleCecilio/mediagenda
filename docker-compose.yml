@@ -19,6 +19,28 @@ services:
       - mediagenda_net
 
   # =====================================================
+  # Node 10.16.0 e NPM 6.9.0
+  # =====================================================
+  nodejs:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: mediagenda_nodejs
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./nodejs:/app
+      - /app/node_modules
+    working_dir: /app
+    depends_on:
+      - mysql
+    networks:
+      - mediagenda_net
+    stdin_open: true
+    tty: true
+  
+  # =====================================================
   # MySQL 8
   # =====================================================
   mysql:
