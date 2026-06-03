@@ -615,9 +615,9 @@ $especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
                                             data-id="<?php echo $med['id'] ?>"
                                             data-nome="<?php echo htmlspecialchars($med['nome']) ?>"
                                             data-crm="<?php echo htmlspecialchars($med['crm']) ?>"
-                                            data-especialidade="<?php echo htmlspecialchars($med['especialidade']) ?>"
-                                            data-telefone="<?php echo htmlspecialchars($med['telefone']) ?>"
-                                            data-email="<?php echo htmlspecialchars($med['email']) ?>"
+                                            data-especialidade-id="<?php echo $med['especialidade_id'] ?>"
+                                            data-telefone="<?php echo htmlspecialchars($med['telefone'] ?? '') ?>"
+                                            data-email="<?php echo htmlspecialchars($med['email'] ?? '') ?>"
                                             data-status="<?php echo htmlspecialchars($med['status']) ?>">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
@@ -627,6 +627,12 @@ $especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
                                             data-id="<?php echo $med['id'] ?>"
                                             data-nome="<?php echo htmlspecialchars($med['nome']) ?>">
                                         <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning py-0 px-2 btn-toggle"
+                                            title="<?php echo $med['status'] === 'Ativo' ? 'Inativar' : 'Ativar' ?>"
+                                            data-id="<?php echo $med['id'] ?>"
+                                            data-status="<?php echo htmlspecialchars($med['status']) ?>">
+                                        <i class="fa-solid fa-<?php echo $med['status'] === 'Ativo' ? 'ban' : 'check' ?>"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -695,12 +701,6 @@ $especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
                                         <option value="<?php echo $esp['id'] ?>"><?php echo htmlspecialchars($esp['nome']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                    <option value="">Selecione...</option>
-                                    <?php foreach ($especialidades as $esp): ?>
-                                        <option value="<?php echo htmlspecialchars($esp) ?>"><?php echo htmlspecialchars($esp) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <!-- TODO: popular via cadastro_especialidades.php -->
                             </div>
                             <div class="col-md-6">
                                 <label for="formTelefone">Telefone</label>
@@ -730,6 +730,7 @@ $especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
                         </button>
                     </div>
                 </form>
+
             </div>
         </div>
     </div>
@@ -740,9 +741,7 @@ $especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // ==================================================
-        // TOGGLE DA SIDEBAR (responsivo)
-        // ==================================================
+        // ── Sidebar toggle ────────────────────────────────────────
         var btnSanduiche      = document.getElementById('btnSanduiche');
         var sidebar           = document.getElementById('sidebar');
         var conteudoPrincipal = document.getElementById('conteudoPrincipal');
@@ -768,14 +767,33 @@ $especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
             }
         });
 
-        // ==================================================
-        // INSTÂNCIA ÚNICA DO MODAL E FLAG DE MODO
-        // ==================================================
+        // ── Helpers ───────────────────────────────────────────────
+        function post(body) {
+            return fetch('cadastro_medicos.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body
+            }).then(function(r) { return r.json(); });
+        }
+
+        function getBadgeClass(status) {
+            return status === 'Ativo' ? 'badge-ativo' : 'badge-inativo';
+        }
+
+        function gerarIniciais(nome) {
+            var partes = nome.split(' '), iniciais = '';
+            for (var i = 0; i < partes.length; i++) {
+                var p = partes[i].replace(/^(Dr\.|Dra\.)$/i, '');
+                if (p.length > 0) { iniciais += p.charAt(0).toUpperCase(); if (iniciais.length === 2) break; }
+            }
+            return iniciais || nome.charAt(0).toUpperCase();
+        }
+
+        // ── Modal ─────────────────────────────────────────────────
         var modalFormMedicoEl = document.getElementById('modalFormMedico');
         var modalFormMedico   = new bootstrap.Modal(modalFormMedicoEl);
         var modoEdicao        = false;
 
-        // Reseta o formulário apenas quando aberto no modo "Novo"
         modalFormMedicoEl.addEventListener('show.bs.modal', function() {
             if (!modoEdicao) {
                 document.getElementById('modalFormTitulo').innerHTML =
@@ -787,212 +805,94 @@ $especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
             modoEdicao = false;
         });
 
-        // ==================================================
-        // EVENT DELEGATION — Editar e Excluir (cobre linhas dinâmicas)
-        // ==================================================
+        // ── Editar / Excluir via event delegation ─────────────────
         document.querySelector('.tabela-medicos').addEventListener('click', function(e) {
             var btnEditar  = e.target.closest('.btn-editar');
             var btnExcluir = e.target.closest('.btn-excluir');
+            var btnToggle  = e.target.closest('.btn-toggle');
 
             if (btnEditar) {
                 modoEdicao = true;
                 document.getElementById('modalFormTitulo').innerHTML =
                     '<i class="fa-solid fa-pen me-2"></i>Editar Médico';
-                document.getElementById('formAcao').value           = 'editar';
-                document.getElementById('formId').value             = btnEditar.dataset.id;
-                document.getElementById('formNome').value           = btnEditar.dataset.nome;
-                document.getElementById('formCrm').value            = btnEditar.dataset.crm;
-                document.getElementById('formEspecialidade').value  = btnEditar.dataset.especialidade;
-                document.getElementById('formTelefone').value       = btnEditar.dataset.telefone;
-                document.getElementById('formEmail').value          = btnEditar.dataset.email;
-                document.getElementById('formStatus').value         = btnEditar.dataset.status;
+                document.getElementById('formAcao').value                  = 'editar';
+                document.getElementById('formId').value                    = btnEditar.dataset.id;
+                document.getElementById('formNome').value                  = btnEditar.dataset.nome;
+                document.getElementById('formCrm').value                   = btnEditar.dataset.crm;
+                document.getElementById('formEspecialidade').value         = btnEditar.dataset.especialidadeId;
+                document.getElementById('formTelefone').value              = btnEditar.dataset.telefone;
+                document.getElementById('formEmail').value                 = btnEditar.dataset.email;
+                document.getElementById('formStatus').value                = btnEditar.dataset.status;
                 modalFormMedico.show();
+            }
+
+            if (btnToggle) {
+                var statusAtual = btnToggle.dataset.status;
+                var acao = statusAtual === 'Ativo' ? 'inativar' : 'ativar';
+                Swal.fire({
+                    title: 'Deseja ' + acao + ' este médico?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim',
+                    cancelButtonText: 'Não'
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        post('acao=alternar_status&id=' + btnToggle.dataset.id)
+                        .then(function(res) {
+                            if (res.success) { window.location.reload(); }
+                            else { Swal.fire('Erro', res.message, 'error'); }
+                        });
+                    }
+                });
             }
 
             if (btnExcluir) {
                 Swal.fire({
                     title: 'Excluir médico?',
-                    html: 'Deseja excluir o cadastro de <strong>' + btnExcluir.dataset.nome + '</strong>?',
+                    html: 'Deseja excluir <strong>' + btnExcluir.dataset.nome + '</strong>?',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
-                    cancelButtonColor:  '#6c757d',
-                    confirmButtonText:  'Sim, excluir',
-                    cancelButtonText:   'Voltar'
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sim, excluir',
+                    cancelButtonText: 'Voltar'
                 }).then(function(result) {
                     if (result.isConfirmed) {
-                        // TODO: substituir pelo envio real ao banco
-                        btnExcluir.closest('tr').remove();
-                        atualizarContadorMedico();
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Excluído!',
-                            text: 'O médico foi removido do cadastro.',
-                            confirmButtonColor: '#0d6efd',
-                            timer: 2000,
-                            showConfirmButton: false
+                        post('acao=excluir&id=' + btnExcluir.dataset.id)
+                        .then(function(res) {
+                            if (res.success) { window.location.reload(); }
+                            else { Swal.fire('Erro', res.message, 'error'); }
                         });
                     }
                 });
             }
         });
 
-        // ==================================================
-        // FUNÇÃO PRINCIPAL: salvar médico
-        // TODO: substituir o corpo por fetch/AJAX ao integrar com o banco
-        // ==================================================
+        // ── Salvar (novo ou editar) ───────────────────────────────
         function salvarMedico() {
             var form = document.getElementById('formMedico');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
+            if (!form.checkValidity()) { form.reportValidity(); return; }
 
-            var acao          = document.getElementById('formAcao').value;
-            var id            = document.getElementById('formId').value;
-            var nome          = document.getElementById('formNome').value.trim();
-            var crm           = document.getElementById('formCrm').value.trim();
-            var especialidade = document.getElementById('formEspecialidade').value;
-            var telefone      = document.getElementById('formTelefone').value.trim();
-            var email         = document.getElementById('formEmail').value.trim();
-            var status        = document.getElementById('formStatus').value;
-            var iniciais      = gerarIniciais(nome);
+            var id    = document.getElementById('formId').value;
+            var nome  = document.getElementById('formNome').value.trim();
+            var crm   = document.getElementById('formCrm').value.trim();
+            var espId = document.getElementById('formEspecialidade').value;
+            var tel   = document.getElementById('formTelefone').value.trim();
+            var email = document.getElementById('formEmail').value.trim();
 
-            if (acao === 'editar') {
-                var btnEditar = document.querySelector('.btn-editar[data-id="' + id + '"]');
-                if (btnEditar) {
-                    var tr = btnEditar.closest('tr');
-                    tr.cells[1].innerHTML =
-                        '<div class="d-flex align-items-center">' +
-                        '<span class="avatar-medico">' + iniciais + '</span>' + nome + '</div>';
-                    tr.cells[2].textContent = crm;
-                    tr.cells[3].textContent = especialidade;
-                    tr.cells[4].textContent = telefone;
-                    tr.cells[5].textContent = email;
-                    tr.cells[6].innerHTML   = '<span class="badge-status ' + getBadgeClassMedico(status) + '">' + status + '</span>';
+            var body = 'acao=salvar'
+                + '&id='              + encodeURIComponent(id)
+                + '&nome='            + encodeURIComponent(nome)
+                + '&crm='             + encodeURIComponent(crm)
+                + '&especialidade_id='+ encodeURIComponent(espId)
+                + '&telefone='        + encodeURIComponent(tel)
+                + '&email='           + encodeURIComponent(email);
 
-                    btnEditar.dataset.nome          = nome;
-                    btnEditar.dataset.crm           = crm;
-                    btnEditar.dataset.especialidade = especialidade;
-                    btnEditar.dataset.telefone      = telefone;
-                    btnEditar.dataset.email         = email;
-                    btnEditar.dataset.status        = status;
-
-                    var btnExcluir = tr.querySelector('.btn-excluir');
-                    if (btnExcluir) btnExcluir.dataset.nome = nome;
-                }
-            } else {
-                var tbody    = document.querySelector('.tabela-medicos tbody');
-                var semDados = tbody.querySelector('td[colspan]');
-                if (semDados) semDados.closest('tr').remove();
-
-                var novoId = 'tmp-' + Date.now();
-                tbody.appendChild(criarLinhaMedico(novoId, nome, crm, especialidade, telefone, email, status, iniciais));
-                atualizarContadorMedico();
-            }
-
-            modalFormMedico.hide();
-            Swal.fire({
-                icon: 'success',
-                title: 'Salvo!',
-                text: acao === 'editar' ? 'Médico atualizado com sucesso.' : 'Médico cadastrado com sucesso.',
-                confirmButtonColor: '#0d6efd',
-                timer: 2000,
-                showConfirmButton: false
+            post(body).then(function(res) {
+                modalFormMedico.hide();
+                Swal.fire(res.success ? 'Salvo!' : 'Erro', res.message, res.success ? 'success' : 'error')
+                    .then(function() { if (res.success) window.location.reload(); });
             });
-        }
-
-        // Cria um <tr> completo para a tabela de médicos
-        function criarLinhaMedico(id, nome, crm, especialidade, telefone, email, status, iniciais) {
-            var tr = document.createElement('tr');
-
-            var tdId = document.createElement('td'); tdId.className = 'text-muted'; tdId.textContent = '—';
-
-            var tdNome = document.createElement('td');
-            tdNome.innerHTML =
-                '<div class="d-flex align-items-center">' +
-                '<span class="avatar-medico">' + iniciais + '</span>' + nome + '</div>';
-
-            var tdCrm  = document.createElement('td'); tdCrm.textContent  = crm;
-            var tdEsp  = document.createElement('td'); tdEsp.textContent  = especialidade;
-            var tdTel  = document.createElement('td'); tdTel.textContent  = telefone;
-            var tdMail = document.createElement('td'); tdMail.textContent = email;
-
-            var tdSt  = document.createElement('td');
-            var badge = document.createElement('span');
-            badge.className   = 'badge-status ' + getBadgeClassMedico(status);
-            badge.textContent = status;
-            tdSt.appendChild(badge);
-
-            var tdAc = document.createElement('td');
-            tdAc.className        = 'text-center';
-            tdAc.style.whiteSpace = 'nowrap';
-
-            var btnEdit = document.createElement('button');
-            btnEdit.className              = 'btn btn-sm btn-outline-primary py-0 px-2 btn-editar';
-            btnEdit.title                  = 'Editar';
-            btnEdit.innerHTML              = '<i class="fa-solid fa-pen"></i>';
-            btnEdit.dataset.id             = id;
-            btnEdit.dataset.nome           = nome;
-            btnEdit.dataset.crm            = crm;
-            btnEdit.dataset.especialidade  = especialidade;
-            btnEdit.dataset.telefone       = telefone;
-            btnEdit.dataset.email          = email;
-            btnEdit.dataset.status         = status;
-
-            var btnExc = document.createElement('button');
-            btnExc.className      = 'btn btn-sm btn-outline-danger py-0 px-2 btn-excluir';
-            btnExc.title          = 'Excluir médico';
-            btnExc.innerHTML      = '<i class="fa-solid fa-trash"></i>';
-            btnExc.dataset.id     = id;
-            btnExc.dataset.nome   = nome;
-
-            tdAc.appendChild(btnEdit);
-            tdAc.appendChild(btnExc);
-            tr.appendChild(tdId);   tr.appendChild(tdNome); tr.appendChild(tdCrm);
-            tr.appendChild(tdEsp);  tr.appendChild(tdTel);  tr.appendChild(tdMail);
-            tr.appendChild(tdSt);   tr.appendChild(tdAc);
-            return tr;
-        }
-
-        // Retorna a classe CSS do badge de status do médico
-        function getBadgeClassMedico(status) {
-            return status === 'Ativo' ? 'badge-ativo' : 'badge-inativo';
-        }
-
-        // Gera as iniciais do nome para o avatar
-        function gerarIniciais(nome) {
-            var partes   = nome.split(' ');
-            var iniciais = '';
-            for (var i = 0; i < partes.length; i++) {
-                var p = partes[i].replace(/^(Dr\.|Dra\.)$/i, '');
-                if (p.length > 0) {
-                    iniciais += p.charAt(0).toUpperCase();
-                    if (iniciais.length === 2) break;
-                }
-            }
-            return iniciais || nome.charAt(0).toUpperCase();
-        }
-
-        // Atualiza o texto do contador de registros
-        function atualizarContadorMedico() {
-            var tbody  = document.querySelector('.tabela-medicos tbody');
-            var linhas = tbody.rows;
-            var total  = 0;
-            for (var i = 0; i < linhas.length; i++) {
-                if (!linhas[i].querySelector('td[colspan]')) total++;
-            }
-            if (tbody.rows.length === 0) {
-                var tr = document.createElement('tr');
-                var td = document.createElement('td');
-                td.setAttribute('colspan', '8');
-                td.className = 'text-center text-muted py-4';
-                td.innerHTML = '<i class="fa-solid fa-user-xmark me-2"></i>Nenhum médico encontrado.';
-                tr.appendChild(td);
-                tbody.appendChild(tr);
-            }
-            var el = document.getElementById('contadorRegistros');
-            if (el) el.textContent = total + ' registro(s) encontrado(s)';
         }
     </script>
 </body>
