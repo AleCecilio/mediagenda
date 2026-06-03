@@ -1,109 +1,136 @@
 <?php
-/* ============================================================
-   cadastro_medicos.php - Cadastro de Médicos
-   ------------------------------------------------------------
-   TODO: Adicionar validação de sessão aqui (após implementar login)
-   Ex:
-   session_start();
-   if (!isset($_SESSION['operador'])) {
-       header("Location: login.php");
-       exit;
-   }
-============================================================ */
+session_start();
+require_once 'conexao.php';
 
-/* ============================================================
-   DADOS DO OPERADOR LOGADO
-   TODO: Substituir pelos dados vindos da $_SESSION
-============================================================ */
-$operadorNome  = "Dr. João Silva";
-$operadorEmail = "joao.silva@clinica.com";
-
-/* ============================================================
-   PROCESSAMENTO DE AÇÕES (POST)
-   TODO: Implementar as ações ao integrar com o banco de dados
-
-   Estrutura esperada para receber via $_POST:
-   - acao           : 'novo' | 'editar' | 'excluir'
-   - id             : int    (apenas para editar/excluir)
-   - nome           : string
-   - crm            : string
-   - especialidade  : string
-   - telefone       : string
-   - email          : string
-   - status         : 'Ativo' | 'Inativo'
-
-   Exemplo futuro:
-   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-       $acao = isset($_POST['acao']) ? $_POST['acao'] : '';
-       if ($acao === 'novo') {
-           // INSERT INTO medicos (nome, crm, especialidade, telefone, email, status)
-           //                     VALUES (?, ?, ?, ?, ?, ?)
-       } elseif ($acao === 'editar') {
-           // UPDATE medicos SET nome=?, crm=?, especialidade=?, telefone=?, email=?, status=?
-           //              WHERE id = ?
-       } elseif ($acao === 'excluir') {
-           // DELETE FROM medicos WHERE id = ?
-           // OU UPDATE medicos SET status = 'Inativo' WHERE id = ? (exclusão lógica)
-       }
-       header("Location: cadastro_medicos.php");
-       exit;
-   }
-============================================================ */
-
-/* ============================================================
-   FILTROS DE BUSCA
-   TODO: Usar estes valores para montar a query no banco
-   Exemplo: WHERE (nome LIKE :nome OR :nome IS NULL)
-            AND (especialidade = :especialidade OR :especialidade IS NULL)
-            AND (status = :status OR :status IS NULL)
-============================================================ */
-$filtroNome          = trim(isset($_GET['nome'])          ? $_GET['nome']          : '');
-$filtroEspecialidade = trim(isset($_GET['especialidade']) ? $_GET['especialidade'] : '');
-$filtroStatus        = trim(isset($_GET['status'])        ? $_GET['status']        : '');
-
-/* ============================================================
-   MÉDICOS FICTÍCIOS (placeholder para visualização)
-   ⚠️ REMOVER QUANDO INTEGRAR COM O BANCO DE DADOS
-   TODO: Substituir por:
-   $medicos = buscarMedicos($filtroNome, $filtroEspecialidade, $filtroStatus);
-============================================================ */
-$medicos = array(
-    array('id' => 1, 'nome' => 'Dr. Carlos Lima',   'crm' => 'CRM/SP 12345', 'especialidade' => 'Cardiologia',   'telefone' => '(11) 91234-5678', 'email' => 'carlos.lima@clinica.com',   'status' => 'Ativo'),
-    array('id' => 2, 'nome' => 'Dra. Ana Paula',    'crm' => 'CRM/SP 23456', 'especialidade' => 'Dermatologia',  'telefone' => '(11) 92345-6789', 'email' => 'ana.paula@clinica.com',    'status' => 'Ativo'),
-    array('id' => 3, 'nome' => 'Dr. Pedro Alves',   'crm' => 'CRM/SP 34567', 'especialidade' => 'Ortopedia',     'telefone' => '(11) 93456-7890', 'email' => 'pedro.alves@clinica.com',  'status' => 'Ativo'),
-    array('id' => 4, 'nome' => 'Dra. Marina Reis',  'crm' => 'CRM/SP 45678', 'especialidade' => 'Pediatria',     'telefone' => '(11) 94567-8901', 'email' => 'marina.reis@clinica.com',  'status' => 'Ativo'),
-    array('id' => 5, 'nome' => 'Dr. Ricardo Souza', 'crm' => 'CRM/SP 56789', 'especialidade' => 'Neurologia',    'telefone' => '(11) 95678-9012', 'email' => 'ricardo.souza@clinica.com','status' => 'Inativo'),
-    array('id' => 6, 'nome' => 'Dra. Fernanda Melo','crm' => 'CRM/SP 67890', 'especialidade' => 'Ginecologia',   'telefone' => '(11) 96789-0123', 'email' => 'fernanda.melo@clinica.com','status' => 'Ativo'),
-);
-
-/* ============================================================
-   APLICAÇÃO DOS FILTROS NOS DADOS FICTÍCIOS
-   TODO: Remover este bloco ao integrar com o banco —
-         a filtragem passará a ser feita diretamente na query SQL
-============================================================ */
-if ($filtroNome !== '' || $filtroEspecialidade !== '' || $filtroStatus !== '') {
-    $medicos = array_values(array_filter($medicos, function($med) use (
-        $filtroNome, $filtroEspecialidade, $filtroStatus
-    ) {
-        if ($filtroNome !== '' && stripos($med['nome'], $filtroNome) === false) {
-            return false;
-        }
-        if ($filtroEspecialidade !== '' && $med['especialidade'] !== $filtroEspecialidade) {
-            return false;
-        }
-        if ($filtroStatus !== '' && $med['status'] !== $filtroStatus) {
-            return false;
-        }
-        return true;
-    }));
+if (!isset($_SESSION['cod_usuario'])) {
+    header('Location: login.php');
+    exit;
 }
 
-/* ============================================================
-   ESPECIALIDADES DISPONÍVEIS
-   TODO: Substituir por consulta ao banco:
-   $especialidades = buscarEspecialidades();
-============================================================ */
-$especialidades = array('Cardiologia', 'Dermatologia', 'Ginecologia', 'Neurologia', 'Ortopedia', 'Pediatria');
+// Busca nome do usuário logado para a navbar
+$cod_usuario = $_SESSION['cod_usuario'];
+$result = mysqli_query($conexao_bd, "SELECT nome, email FROM usuario WHERE cod_usuario = '$cod_usuario'");
+$usuarioLogado = mysqli_fetch_assoc($result);
+$operadorNome  = $usuarioLogado['nome']  ?? '';
+$operadorEmail = $usuarioLogado['email'] ?? '';
+
+// ── AJAX ──────────────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
+    header('Content-Type: application/json');
+    $acao = $_POST['acao'];
+
+    if ($acao === 'salvar') {
+        $id    = (int)($_POST['id'] ?? 0);
+        $nome  = trim($_POST['nome']  ?? '');
+        $crm   = trim($_POST['crm']   ?? '');
+        $espId = (int)($_POST['especialidade_id'] ?? 0);
+        $tel   = trim($_POST['telefone'] ?? '');
+        $email = trim($_POST['email']    ?? '');
+
+        if ($nome === '' || $crm === '' || $espId === 0) {
+            echo json_encode(['success' => false, 'message' => 'Nome, CRM e Especialidade são obrigatórios.']);
+            exit;
+        }
+
+        if ($id > 0) {
+            $stmt = $conexao_bd->prepare('UPDATE medicos SET nome=?, crm=?, especialidade_id=?, telefone=?, email=? WHERE id=?');
+            $stmt->bind_param('ssissi', $nome, $crm, $espId, $tel, $email, $id);
+            $msg = 'Médico atualizado com sucesso!';
+        } else {
+            $stmt = $conexao_bd->prepare('INSERT INTO medicos (nome, crm, especialidade_id, telefone, email) VALUES (?,?,?,?,?)');
+            $stmt->bind_param('ssiss', $nome, $crm, $espId, $tel, $email);
+            $msg = 'Médico cadastrado com sucesso!';
+        }
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => $msg]);
+        } else {
+            $err = $conexao_bd->errno === 1062 ? 'Já existe um médico com esse CRM.' : 'Erro: ' . $conexao_bd->error;
+            echo json_encode(['success' => false, 'message' => $err]);
+        }
+        $stmt->close();
+        exit;
+    }
+
+    if ($acao === 'alternar_status') {
+        $id   = (int)($_POST['id'] ?? 0);
+        $stmt = $conexao_bd->prepare('UPDATE medicos SET status = IF(status="Ativo","Inativo","Ativo") WHERE id=?');
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        echo json_encode(['success' => true, 'message' => 'Status alterado com sucesso!']);
+        $stmt->close();
+        exit;
+    }
+
+    if ($acao === 'excluir') {
+        $id    = (int)($_POST['id'] ?? 0);
+        $check = $conexao_bd->prepare('SELECT COUNT(*) AS total FROM agendamentos WHERE medico_id = ?');
+        $check->bind_param('i', $id);
+        $check->execute();
+        $row = $check->get_result()->fetch_assoc();
+        $check->close();
+
+        if ($row['total'] > 0) {
+            echo json_encode(['success' => false, 'message' => 'Não é possível excluir: há agendamentos vinculados a este médico.']);
+            exit;
+        }
+
+        $stmt = $conexao_bd->prepare('DELETE FROM medicos WHERE id=?');
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        echo json_encode(['success' => true, 'message' => 'Médico excluído com sucesso!']);
+        $stmt->close();
+        exit;
+    }
+
+    echo json_encode(['success' => false, 'message' => 'Ação inválida.']);
+    exit;
+}
+
+// ── Dados para renderizar a página ────────────────────────────
+
+// Filtros via GET
+$filtroNome          = trim($_GET['nome']          ?? '');
+$filtroEspecialidade = trim($_GET['especialidade'] ?? '');
+$filtroStatus        = trim($_GET['status']        ?? '');
+
+// Monta query com filtros
+$where = '1=1';
+$params = [];
+$types  = '';
+if ($filtroNome !== '') {
+    $where   .= ' AND m.nome LIKE ?';
+    $params[] = '%' . $filtroNome . '%';
+    $types   .= 's';
+}
+if ($filtroEspecialidade !== '') {
+    $where   .= ' AND m.especialidade_id = ?';
+    $params[] = (int)$filtroEspecialidade;
+    $types   .= 'i';
+}
+if ($filtroStatus !== '') {
+    $where   .= ' AND m.status = ?';
+    $params[] = $filtroStatus;
+    $types   .= 's';
+}
+
+$sql  = "SELECT m.id, m.nome, m.crm, m.especialidade_id, e.nome AS especialidade,
+                m.telefone, m.email, m.status
+         FROM medicos m
+         JOIN especialidades e ON e.id = m.especialidade_id
+         WHERE $where
+         ORDER BY m.nome";
+$stmt = $conexao_bd->prepare($sql);
+if ($types !== '') {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$medicos = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Especialidades ativas para o select do modal e do filtro
+$resEsp       = $conexao_bd->query('SELECT id, nome FROM especialidades WHERE status = "Ativo" ORDER BY nome');
+$especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -448,7 +475,7 @@ $especialidades = array('Cardiologia', 'Dermatologia', 'Ginecologia', 'Neurologi
                 <a class="nav-link ativo" href="cadastro_medicos.php"><i class="fa-solid fa-user-doctor"></i> Cadastro de Médicos</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#"><i class="fa-solid fa-list-check"></i> Cadastro de Especialidades</a>
+                <a class="nav-link" href="cadastro_especialidades.php"><i class="fa-solid fa-list-check"></i> Cadastro de Especialidades</a>
             </li>
         </ul>
     </aside>
@@ -486,15 +513,12 @@ $especialidades = array('Cardiologia', 'Dermatologia', 'Ginecologia', 'Neurologi
                     </div>
                     <div class="col-md-4">
                         <label for="filtroEspecialidade">Especialidade</label>
-                        <select class="form-select form-select-sm" id="filtroEspecialidade" name="especialidade">
-                            <option value="">Todas</option>
-                            <?php foreach ($especialidades as $esp): ?>
-                                <option value="<?php echo htmlspecialchars($esp) ?>"
-                                    <?php echo ($filtroEspecialidade === $esp) ? 'selected' : '' ?>>
-                                    <?php echo htmlspecialchars($esp) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <select class="form-select" id="formEspecialidade" name="especialidade_id" required>
+                                    <option value="">Selecione...</option>
+                                    <?php foreach ($especialidades as $esp): ?>
+                                        <option value="<?php echo $esp['id'] ?>"><?php echo htmlspecialchars($esp['nome']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                     </div>
                     <div class="col-md-2">
                         <label for="filtroStatus">Status</label>
@@ -665,7 +689,12 @@ $especialidades = array('Cardiologia', 'Dermatologia', 'Ginecologia', 'Neurologi
                             </div>
                             <div class="col-md-6">
                                 <label for="formEspecialidade">Especialidade <span class="text-danger">*</span></label>
-                                <select class="form-select" id="formEspecialidade" name="especialidade" required>
+                                <select class="form-select" id="formEspecialidade" name="especialidade_id" required>
+                                    <option value="">Selecione...</option>
+                                    <?php foreach ($especialidades as $esp): ?>
+                                        <option value="<?php echo $esp['id'] ?>"><?php echo htmlspecialchars($esp['nome']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                                     <option value="">Selecione...</option>
                                     <?php foreach ($especialidades as $esp): ?>
                                         <option value="<?php echo htmlspecialchars($esp) ?>"><?php echo htmlspecialchars($esp) ?></option>
