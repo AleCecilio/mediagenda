@@ -95,13 +95,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         exit;
     }
 
+    if ($acao === 'atualizar_foto') {
+        $foto = trim($_POST['foto'] ?? '');
+
+        if ($foto === '') {
+            echo json_encode(['success' => false, 'message' => 'Nenhuma imagem recebida.']);
+            exit;
+        }
+
+        // Valida que é realmente um base64 de imagem
+        if (!preg_match('/^data:image\/(jpeg|png|gif|webp);base64,/', $foto)) {
+            echo json_encode(['success' => false, 'message' => 'Formato de imagem inválido. Use JPG, PNG, GIF ou WebP.']);
+            exit;
+        }
+
+        // Limita tamanho: base64 de 2MB ~ 2.7MB de string
+        if (strlen($foto) > 2800000) {
+            echo json_encode(['success' => false, 'message' => 'Imagem muito grande. Máximo permitido: 2MB.']);
+            exit;
+        }
+
+        $stmt = $conexao_bd->prepare('UPDATE usuario SET foto = ? WHERE cod_usuario = ?');
+        $stmt->bind_param('si', $foto, $cod_usuario);
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Foto atualizada com sucesso!', 'foto' => $foto]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erro ao salvar foto.']);
+        }
+        $stmt->close();
+        exit;
+    }
+
+    if ($acao === 'remover_foto') {
+        $null = null;
+        $stmt = $conexao_bd->prepare('UPDATE usuario SET foto = NULL WHERE cod_usuario = ?');
+        $stmt->bind_param('i', $cod_usuario);
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Foto removida.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erro ao remover foto.']);
+        }
+        $stmt->close();
+        exit;
+    }
+
     echo json_encode(['success' => false, 'message' => 'Ação inválida.']);
     exit;
 }
 
 // ── Dados do usuário logado ───────────────────────────────────
-$stmt = $conexao_bd->prepare('SELECT nome, email, username, max_agendamentos_dia FROM usuario WHERE cod_usuario = ?');
-$stmt->bind_param('i', $cod_usuario);
+$stmt = $conexao_bd->prepare(
+    'SELECT nome, email, username, max_agendamentos_dia, foto 
+    FROM usuario 
+    WHERE cod_usuario = ?'
+);$stmt->bind_param('i', $cod_usuario);
 $stmt->execute();
 $usuario = $stmt->get_result()->fetch_assoc();
 $stmt->close();
@@ -195,7 +244,12 @@ $operadorEmail = $usuario['email'];
         <div class="dropdown">
             <button class="operador-toggle" type="button" id="dropdownOperador"
                     data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fa-solid fa-circle-user"></i>
+                <?php if (!empty($usuario['foto'])): ?>
+                    <img src="<?php echo $usuario['foto'] ?>"
+                        style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.6);">
+                <?php else: ?>
+                    <i class="fa-solid fa-circle-user"></i>
+                <?php endif; ?>
                 <span class="d-none d-md-inline"><?php echo htmlspecialchars($operadorNome) ?></span>
                 <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem;"></i>
             </button>
@@ -240,22 +294,38 @@ $operadorEmail = $usuario['email'];
                 <i class="fa-solid fa-user"></i>
                 <span>Dados do Perfil</span>
             </div>
-            <div class="card-config-body">
-                <div class="d-flex align-items-center gap-4 mb-4">
-                    <div class="avatar-grande" id="avatarGrande">
-                        <?php
-                            $partes = explode(' ', $usuario['nome']);
-                            $ini = '';
-                            foreach ($partes as $p) {
-                                $l = ltrim($p, '.');
-                                if ($l !== '') { $ini .= mb_strtoupper(mb_substr($l, 0, 1)); if (mb_strlen($ini) === 2) break; }
-                            }
-                            echo htmlspecialchars($ini);
-                        ?>
+            <div class="d-flex align-items-center gap-4 mb-4">
+                    <div class="position-relative" style="width:72px;">
+                        <?php if (!empty($usuario['foto'])): ?>
+                            <img src="<?php echo $usuario['foto'] ?>" id="avatarGrande"
+                                 style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--azul-primario);">
+                        <?php else: ?>
+                            <div class="avatar-grande" id="avatarGrande">
+                                <?php
+                                    $partes = explode(' ', $usuario['nome']);
+                                    $ini = '';
+                                    foreach ($partes as $p) {
+                                        $l = ltrim($p, '.');
+                                        if ($l !== '') { $ini .= mb_strtoupper(mb_substr($l, 0, 1)); if (mb_strlen($ini) === 2) break; }
+                                    }
+                                    echo htmlspecialchars($ini);
+                                ?>
+                            </div>
+                        <?php endif; ?>
+                        <label for="inputFoto" title="Alterar foto"
+                               style="position:absolute;bottom:0;right:0;width:24px;height:24px;border-radius:50%;background:var(--azul-primario);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.7rem;">
+                            <i class="fa-solid fa-camera"></i>
+                        </label>
+                        <input type="file" id="inputFoto" accept="image/jpeg,image/png,image/gif,image/webp" class="d-none">
                     </div>
                     <div>
                         <div class="fw-semibold fs-5"><?php echo htmlspecialchars($usuario['nome']) ?></div>
                         <div class="text-muted small"><?php echo htmlspecialchars($usuario['username']) ?></div>
+                        <?php if (!empty($usuario['foto'])): ?>
+                            <button class="btn btn-link btn-sm text-danger p-0 mt-1" onclick="removerFoto()">
+                                <i class="fa-solid fa-trash me-1"></i>Remover foto
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="row g-3">
@@ -385,6 +455,60 @@ $operadorEmail = $usuario['email'];
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: body
             }).then(function(r) { return r.json(); });
+        }
+
+        // ── Foto de perfil ────────────────────────────────────────
+        document.getElementById('inputFoto').addEventListener('change', function() {
+            var file = this.files[0];
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire('Atenção', 'A imagem deve ter no máximo 2MB.', 'warning');
+                this.value = '';
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var base64 = e.target.result;
+
+                // Preview imediato
+                var avatar = document.getElementById('avatarGrande');
+                if (avatar.tagName === 'DIV') {
+                    var img = document.createElement('img');
+                    img.id    = 'avatarGrande';
+                    img.style = 'width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--azul-primario)';
+                    avatar.parentNode.replaceChild(img, avatar);
+                    avatar = img;
+                }
+                avatar.src = base64;
+
+                // Envia ao servidor
+                post('acao=atualizar_foto&foto=' + encodeURIComponent(base64))
+                .then(function(res) {
+                    Swal.fire(res.success ? 'Salvo!' : 'Erro', res.message, res.success ? 'success' : 'error')
+                    .then(function() { if (res.success) window.location.reload(); });
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function removerFoto() {
+            Swal.fire({
+                title: 'Remover foto?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, remover',
+                cancelButtonText: 'Cancelar'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    post('acao=remover_foto')
+                    .then(function(res) {
+                        Swal.fire(res.success ? 'Removida!' : 'Erro', res.message, res.success ? 'success' : 'error')
+                        .then(function() { if (res.success) window.location.reload(); });
+                    });
+                }
+            });
         }
 
         // ── Salvar perfil ─────────────────────────────────────────

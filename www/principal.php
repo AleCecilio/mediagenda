@@ -9,13 +9,14 @@ if(!isset($_SESSION['cod_usuario'])){
 $cod_usuario = $_SESSION['cod_usuario'];
 $nomeUsuario = "";
 $emailUsuario = "";
+
 $sql = "SELECT * FROM usuario WHERE cod_usuario = '$cod_usuario'";
 
-$result = mysqli_query($conexao_bd,$sql); //pega o resultado da query e lança num array
-
-if($consulta = mysqli_fetch_assoc($result)){ //leitura do array
+$result = mysqli_query($conexao_bd, $sql);
+if ($consulta = mysqli_fetch_assoc($result)) {
     $nomeUsuario  = $consulta['nome'];
     $emailUsuario = $consulta['email'];
+    $fotoUsuario  = $consulta['foto'] ?? null;
 }
 /* ============================================================
    principal.php - Dashboard de Agendamento de Consultas Médicas
@@ -456,7 +457,12 @@ $agendamentosFicticios = [
         <!-- Lado direito: dropdown do operador -->
         <div class="dropdown">
             <button class="operador-toggle" type="button" id="dropdownOperador" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fa-solid fa-circle-user"></i>
+                <?php if (!empty($fotoUsuario)): ?>
+                    <img src="<?php echo $fotoUsuario ?>"
+                        style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.6);">
+                <?php else: ?>
+                    <i class="fa-solid fa-circle-user"></i>
+                <?php endif; ?>
                 <span class="d-none d-md-inline"><?php echo($operadorNome); ?></span>
                 <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem;"></i>
             </button>

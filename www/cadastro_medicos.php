@@ -9,10 +9,16 @@ if (!isset($_SESSION['cod_usuario'])) {
 
 // Busca nome do usuário logado para a navbar
 $cod_usuario = $_SESSION['cod_usuario'];
-$result = mysqli_query($conexao_bd, "SELECT nome, email FROM usuario WHERE cod_usuario = '$cod_usuario'");
+$result = mysqli_query(
+    $conexao_bd, 
+    "SELECT nome, email, foto 
+    FROM usuario 
+    WHERE cod_usuario = '$cod_usuario'"
+);
 $usuarioLogado = mysqli_fetch_assoc($result);
 $operadorNome  = $usuarioLogado['nome']  ?? '';
 $operadorEmail = $usuarioLogado['email'] ?? '';
+$fotoUsuario   = $usuarioLogado['foto']  ?? null;
 
 // ── AJAX ──────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
@@ -446,7 +452,12 @@ $especialidades = $resEsp->fetch_all(MYSQLI_ASSOC);
 
         <div class="dropdown">
             <button class="operador-toggle" type="button" id="dropdownOperador" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fa-solid fa-circle-user"></i>
+                <?php if (!empty($fotoUsuario)): ?>
+                    <img src="<?php echo $fotoUsuario ?>"
+                        style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.6);">
+                <?php else: ?>
+                    <i class="fa-solid fa-circle-user"></i>
+                <?php endif; ?>
                 <span class="d-none d-md-inline"><?php echo htmlspecialchars($operadorNome) ?></span>
                 <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem;"></i>
             </button>

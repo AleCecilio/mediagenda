@@ -9,12 +9,14 @@ CREATE DATABASE IF NOT EXISTS labdbprog2
 
 USE labdbprog2;
 
-create table if not exists usuario (
+CREATE TABLE IF NOT EXISTS usuario (
     cod_usuario int unsigned not null auto_increment,
-    nome varchar(150) not null,
-    email varchar(150) not null,
-    username varchar(255) not null unique,
-    pass varchar(10) not null,
+    nome        varchar(150) not null,
+    email       varchar(150) not null,
+    username    varchar(255) not null unique,
+    pass        varchar(10)  not null,
+    max_agendamentos_dia tinyint unsigned not null default 3,
+    foto        mediumtext default null,
     primary key (cod_usuario)
 ) engine=InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci;
 
