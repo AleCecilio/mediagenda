@@ -18,7 +18,7 @@ create table if not exists usuario (
     primary key (cod_usuario)
 ) engine=InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci;
 
-insert into usuario (nome, email, username, pass) values
+INSERT IGNORE INTO usuario (nome, email, username, pass) values
     ('aluno', 'aluno@a', 'aluno', '123456'),
     ('professor', 'professor@a', 'professor', 'professor123');
 
@@ -29,6 +29,7 @@ insert into usuario (nome, email, username, pass) values
 CREATE TABLE IF NOT EXISTS especialidades (
     id         INT          UNSIGNED NOT NULL AUTO_INCREMENT,
     nome       VARCHAR(100) NOT NULL,
+    status     ENUM('Ativo','Inativo') NOT NULL DEFAULT 'Ativo',
     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -99,7 +100,7 @@ CREATE TABLE IF NOT EXISTS agendamentos (
 -- ============================================================
 -- DADOS INICIAIS: especialidades
 -- ============================================================
-INSERT INTO especialidades (id, nome) VALUES
+INSERT IGNORE INTO especialidades (id, nome) VALUES
     (1, 'Cardiologia'),
     (2, 'Dermatologia'),
     (3, 'Ginecologia'),
@@ -111,7 +112,7 @@ INSERT INTO especialidades (id, nome) VALUES
 -- ============================================================
 -- DADOS INICIAIS: medicos
 -- ============================================================
-INSERT INTO medicos (id, nome, crm, especialidade_id, telefone, email, status) VALUES
+INSERT IGNORE INTO medicos (id, nome, crm, especialidade_id, telefone, email, status) VALUES
     (1, 'Dr. Carlos Lima',    'CRM/SP 12345', 1, '(11) 91234-5678', 'carlos.lima@clinica.com',    'Ativo'),
     (2, 'Dra. Ana Paula',     'CRM/SP 23456', 2, '(11) 92345-6789', 'ana.paula@clinica.com',      'Ativo'),
     (3, 'Dr. Pedro Alves',    'CRM/SP 34567', 5, '(11) 93456-7890', 'pedro.alves@clinica.com',    'Ativo'),
@@ -123,7 +124,7 @@ INSERT INTO medicos (id, nome, crm, especialidade_id, telefone, email, status) V
 -- ============================================================
 -- DADOS INICIAIS: agendamentos
 -- ============================================================
-INSERT INTO agendamentos (id, paciente, medico_id, especialidade_id, data, horario, status) VALUES
+INSERT IGNORE INTO agendamentos (id, paciente, medico_id, especialidade_id, data, horario, status) VALUES
     ( 1, 'Maria Souza',     1, 1, '2026-04-05', '09:00', 'Confirmado'),
     ( 2, 'Carlos Andrade',  2, 2, '2026-04-08', '10:30', 'Confirmado'),
     ( 3, 'Juliana Reis',    3, 5, '2026-04-08', '14:00', 'Pendente'),
