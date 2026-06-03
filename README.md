@@ -1,153 +1,289 @@
-# 🩺 MediAgenda
+# MediAgenda
 
-Sistema web para gerenciamento e agendamento de consultas médicas desenvolvido em PHP durante as aulas de Programação Web.
+Sistema web para gerenciamento de consultas medicas, desenvolvido como projeto academico da disciplina de Programacao Web.
 
----
+O projeto combina uma aplicacao PHP com MySQL/MariaDB, uma interface administrativa com Bootstrap e SweetAlert2, e um modulo Node.js com API REST para consulta e manutencao de agendamentos.
 
-# 🚀 Sobre o Projeto
+## Visao Geral
 
-O **MediAgenda** é uma aplicação desenvolvida para auxiliar no gerenciamento de consultas médicas, permitindo:
+O MediAgenda centraliza o fluxo basico de uma agenda clinica:
 
-- 🔐 Login de usuários
-- 📅 Visualização de agenda mensal
-- 🩺 Cadastro e gerenciamento de agendamentos
-- 👨‍⚕️ Cadastro de médicos
-- 🏥 Cadastro de especialidades
-- ❌ Cancelamento de consultas
-- 📊 Dashboard moderno com calendário
+- autenticacao de usuarios;
+- calendario mensal de consultas;
+- cadastro, edicao, filtro e cancelamento de agendamentos;
+- cadastro de medicos com especialidade, CRM, telefone, e-mail e status;
+- cadastro de especialidades com ativacao, inativacao e exclusao controlada;
+- confirmacoes e mensagens visuais com SweetAlert2;
+- layout responsivo com navbar fixa, sidebar recolhivel e suporte a mobile;
+- API Node.js para listar, criar, atualizar, pesquisar e excluir agendamentos.
 
-O projeto foi desenvolvido utilizando conceitos de:
+## Principais Interacoes
 
-- PHP
-- MySQL / MariaDB
-- HTML5
-- CSS3
-- Bootstrap
-- JavaScript
-- SweetAlert2
-- Git e GitHub
+### Login
 
----
+A tela `www/login.php` valida o preenchimento de usuario e senha antes de enviar os dados para `www/cadastrobanco.php`. Depois da autenticacao, o usuario e direcionado para o painel principal.
 
-# 📁 Estrutura do Projeto
+Usuarios iniciais cadastrados pelo `script.sql`:
+
+| Usuario | Senha |
+|---|---|
+| `aluno` | `123456` |
+| `professor` | `professor123` |
+
+### Painel Principal
+
+O arquivo `www/principal.php` exibe a agenda mensal com navegacao entre meses, destaque para o dia atual e cards de consultas por dia.
+
+Interacoes disponiveis:
+
+- abrir detalhes de uma consulta em modal;
+- visualizar paciente, medico, especialidade, data, horario e status;
+- cancelar agendamento com confirmacao via SweetAlert2;
+- recolher ou expandir a sidebar;
+- navegar para agendas, medicos e especialidades.
+
+### Agendamentos
+
+O arquivo `www/cadastro_agendas.php` concentra a gestao de consultas em formato de tabela.
+
+Interacoes disponiveis:
+
+- criar novo agendamento por modal;
+- editar dados de um agendamento existente;
+- cancelar agendamento com confirmacao;
+- filtrar por paciente, medico, status e intervalo de datas;
+- visualizar status com badges;
+- manter uma base integrada a view `vw_agendamentos`.
+
+### Medicos
+
+O arquivo `www/cadastro_medicos.php` permite gerenciar os profissionais vinculados as especialidades.
+
+Interacoes disponiveis:
+
+- cadastrar novo medico;
+- editar nome, CRM, especialidade, telefone e e-mail;
+- filtrar por nome, especialidade e status;
+- alternar entre status `Ativo` e `Inativo`;
+- excluir medico quando nao houver agendamentos vinculados;
+- usar requisicoes AJAX com respostas JSON para salvar, alterar status e excluir.
+
+### Especialidades
+
+O arquivo `www/cadastro_especialidades.php` gerencia as especialidades medicas.
+
+Interacoes disponiveis:
+
+- cadastrar nova especialidade;
+- editar o nome da especialidade;
+- ativar ou inativar registros;
+- impedir inativacao quando houver medicos ativos vinculados;
+- impedir exclusao quando houver medicos vinculados;
+- executar as acoes por AJAX com feedback visual.
+
+### Modulo Node.js
+
+A pasta `nodejs/` contem uma aplicacao Express que serve uma interface propria e expoe endpoints REST.
+
+Endpoints principais:
+
+| Metodo | Rota | Descricao |
+|---|---|---|
+| `GET` | `/api/status` | Retorna o status do backend Node.js. |
+| `GET` | `/api/consultas` | Lista consultas vindas da view `vw_agendamentos`. |
+| `POST` | `/api/agendamentos` | Cadastra um novo agendamento. |
+| `GET` | `/api/agendamentos/:id` | Busca um agendamento especifico. |
+| `PUT` | `/api/agendamentos/:id` | Atualiza um agendamento. |
+| `DELETE` | `/api/agendamentos/:id` | Exclui um agendamento. |
+| `GET` | `/api/agendamentos/pesquisar/filtros` | Pesquisa agendamentos por filtros. |
+
+## Tecnologias
+
+| Tecnologia | Uso |
+|---|---|
+| PHP 8.2 | Aplicacao web principal |
+| MySQL / MariaDB | Banco de dados relacional |
+| MySQLi | Conexao PHP com o banco |
+| Node.js + Express | API REST e interface alternativa |
+| mysql2 | Conexao Node.js com MySQL |
+| Bootstrap | Componentes e responsividade |
+| Font Awesome | Icones da interface |
+| SweetAlert2 | Alertas, confirmacoes e feedbacks |
+| Docker Compose | Ambiente com PHP, Node.js, MySQL e phpMyAdmin |
+
+## Estrutura do Projeto
 
 ```text
 mediagenda/
-│
-├── login.php
-├── principal.php
-├── redirect.php
-├── logout.php
-├── conexao.php
-├── cadastro_agendas.php
-├── cadastro_medicos.php
-├── cadastro_especialidades.php
-├── cancelar_agendamento.php
-├── script.sql
-└── README.md
+|-- README.md
+|-- script.sql
+|-- docker-compose.yml
+|-- dockerfile
+|-- Dockerfile.node
+|-- www/
+|   |-- login.php
+|   |-- cadastrobanco.php
+|   |-- conexao.php
+|   |-- principal.php
+|   |-- cadastro_agendas.php
+|   |-- cadastro_medicos.php
+|   |-- cadastro_especialidades.php
+|   |-- cancelar_agendamento.php
+|   |-- logout.php
+|   `-- img/
+`-- nodejs/
+    |-- server.js
+    |-- conexao.js
+    |-- package.json
+    `-- public/
+        |-- index.html
+        |-- script.js
+        `-- style.css
 ```
 
----
+## Banco de Dados
 
-# 🗄️ Banco de Dados
+O arquivo `script.sql` cria e popula o banco `labdbprog2`.
 
-O sistema utiliza MySQL/MariaDB.
+Ele inclui:
 
-O arquivo:
+- tabela `usuario`;
+- tabela `especialidades`;
+- tabela `medicos`;
+- tabela `agendamentos`;
+- view `vw_agendamentos`;
+- view `vw_medicos`;
+- usuarios, especialidades, medicos e agendamentos iniciais para teste.
 
-```text
-script.sql
-```
+No codigo atual, as conexoes locais usam:
 
-contém:
+| Campo | Valor |
+|---|---|
+| Host | `localhost` |
+| Porta | `3307` |
+| Banco | `labdbprog2` |
+| Usuario | `root` |
+| Senha | vazia |
 
-- criação do banco;
-- tabelas;
-- relacionamentos;
-- views utilizadas pelo sistema.
+Arquivos de conexao:
 
----
+- PHP: `www/conexao.php`
+- Node.js: `nodejs/conexao.js`
 
-# ⚙️ Como Executar
+## Como Executar Localmente
 
-## 1️⃣ Criar o banco de dados
+### 1. Criar o banco
 
-Execute o arquivo:
+Execute o script SQL no MySQL ou MariaDB:
 
 ```sql
-script.sql
+SOURCE script.sql;
 ```
 
-no MySQL ou MariaDB.
+Ou importe o arquivo `script.sql` pelo phpMyAdmin, MySQL Workbench ou ferramenta equivalente.
 
----
+### 2. Conferir a conexao
 
-## 2️⃣ Configurar a conexão
-
-No arquivo:
+Verifique se `www/conexao.php` aponta para o seu ambiente MySQL:
 
 ```php
-conexao.php
+$host_bd = "localhost";
+$login_bd = "root";
+$password_bd = "";
+$nome_bd = "labdbprog2";
+$port = 3307;
 ```
 
-configure:
+Se a sua instalacao usa outra porta, usuario ou senha, ajuste esses valores.
 
-- servidor;
-- usuário;
-- senha;
-- banco de dados.
+### 3. Rodar a aplicacao PHP
 
----
-
-## 3️⃣ Executar o projeto
-
-Abra o projeto em um servidor PHP e acesse:
+Sirva a pasta `www/` em um servidor PHP/Apache e acesse:
 
 ```text
-login.php
+http://localhost/login.php
 ```
 
----
+Em ambientes como XAMPP, WAMP ou Laragon, coloque a pasta do projeto no diretorio publico do servidor e acesse o arquivo `login.php`.
 
-# 👨‍💻 Integrantes do Grupo
+### 4. Rodar o modulo Node.js
 
-- Nome Completo 1
-- Nome Completo 2
-- Nome Completo 3
-- Nome Completo 4
-- Nome Completo 5
+Entre na pasta `nodejs/`, instale as dependencias e inicie o servidor:
 
----
+```bash
+npm install
+npm start
+```
 
-# 📚 Objetivo Acadêmico
+Depois acesse:
 
-Este projeto possui finalidade educacional e foi desenvolvido como atividade prática da disciplina de Programação Web.
+```text
+http://localhost:3000
+```
 
----
+## Executando com Docker Compose
 
-# 🧠 Funcionalidades Futuras
+O projeto possui `docker-compose.yml` com os seguintes servicos:
 
-- 📱 Responsividade mobile
-- 🔔 Notificações de consultas
-- 📈 Relatórios
-- 👤 Controle de perfis de acesso
-- ☁️ Publicação em nuvem
+- `php`: Apache + PHP na porta `8080`;
+- `nodejs`: Node.js na porta `3000`;
+- `mysql`: MySQL 8;
+- `phpmyadmin`: phpMyAdmin na porta `8081`.
 
----
+Para subir os containers:
 
-# 💻 Tecnologias Utilizadas
+```bash
+docker compose up --build
+```
 
-| Tecnologia | Finalidade |
+Acessos esperados:
+
+| Servico | URL |
 |---|---|
-| PHP | Back-end |
-| MySQL/MariaDB | Banco de dados |
-| Bootstrap | Interface |
-| JavaScript | Interatividade |
-| SweetAlert2 | Alertas modernos |
-| Git/GitHub | Versionamento |
+| PHP | `http://localhost:8080` |
+| Node.js | `http://localhost:3000` |
+| phpMyAdmin | `http://localhost:8081` |
 
----
+Observacao: os arquivos `www/conexao.php` e `nodejs/conexao.js` estao configurados para MySQL local em `localhost:3307`. Para usar a rede interna do Docker Compose, ajuste o host para `mysql`, a porta para `3306` e as credenciais conforme o `docker-compose.yml`.
 
-# 📌 Observação
+## Exemplos de API
 
-Projeto desenvolvido para fins acadêmicos e aprendizado de desenvolvimento web com PHP e banco de dados relacional.
+### Verificar status
+
+```bash
+curl http://localhost:3000/api/status
+```
+
+### Listar consultas
+
+```bash
+curl http://localhost:3000/api/consultas
+```
+
+### Criar agendamento
+
+```bash
+curl -X POST "http://localhost:3000/api/agendamentos" \
+  -H "Content-Type: application/json" \
+  -d "{\"paciente\":\"Joao Teste\",\"medico_id\":1,\"especialidade_id\":1,\"data\":\"2026-05-19\",\"horario\":\"09:45\",\"status\":\"Confirmado\"}"
+```
+
+## Melhorias Recentes
+
+- Sidebar padronizada entre as telas principais.
+- Tela de cadastro de especialidades criada com acoes por AJAX.
+- Cadastro de medicos atualizado com filtros, modal e alteracao de status.
+- Calendario integrado a view de agendamentos.
+- Confirmacoes de cancelamento, exclusao e alteracao de status com SweetAlert2.
+- Estrutura Docker incluindo PHP, Node.js, MySQL e phpMyAdmin.
+
+## Pontos de Atencao
+
+- Algumas credenciais de banco ainda estao hardcoded nos arquivos de conexao.
+- O cancelamento em `www/cancelar_agendamento.php` retorna sucesso, mas o bloco que atualiza o banco ainda esta comentado.
+- A tela de agendamentos possui integracoes em andamento e alguns trechos marcados como TODO.
+- A documentacao considera o estado atual do codigo na branch `main`.
+
+## Objetivo Academico
+
+Este projeto foi desenvolvido para praticar conceitos de desenvolvimento web, banco de dados relacional, integracao entre front-end e back-end, uso de sessoes, requisicoes AJAX e criacao de APIs REST.
