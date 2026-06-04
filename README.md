@@ -11,6 +11,7 @@ O sistema organiza o fluxo básico de uma agenda clínica, permitindo que o usu�
 - cadastre, edite, filtre e cancele agendamentos;
 - gerencie médicos e seus dados profissionais;
 - cadastre e mantenha especialidades médicas;
+- atualize dados de perfil, senha e foto do usuário;
 - acompanhe status de consultas, médicos e especialidades;
 - utilize uma interface responsiva com menu lateral, modais e alertas visuais.
 
@@ -52,6 +53,7 @@ Principais interações:
 - exibição de cards de consultas dentro de cada dia;
 - abertura de modal com os detalhes do agendamento;
 - cancelamento de agendamento com confirmação via SweetAlert2;
+- exibição da foto de perfil do usuário no menu superior, quando cadastrada;
 - menu lateral responsivo para acessar as demais telas.
 
 ### Agendamentos
@@ -92,6 +94,20 @@ Principais interações:
 - bloqueio de inativação quando houver médicos ativos vinculados;
 - bloqueio de exclusão quando houver médicos vinculados;
 - feedback visual com SweetAlert2.
+
+### Configurações
+
+O arquivo `www/configuracoes.php` adiciona uma área para manutenção da conta do usuário logado.
+
+Principais interações:
+
+- atualização de nome e e-mail do perfil;
+- alteração de senha com validação da senha atual;
+- envio de foto de perfil nos formatos JPG, PNG, GIF ou WebP;
+- limite de imagem de até 2 MB;
+- remoção da foto cadastrada;
+- configuração do número máximo de agendamentos visíveis por dia no calendário;
+- ações realizadas via AJAX com retorno em JSON e feedback com SweetAlert2.
 
 ### Módulo Node.js
 
@@ -141,6 +157,7 @@ mediagenda/
 |   |-- cadastro_agendas.php
 |   |-- cadastro_medicos.php
 |   |-- cadastro_especialidades.php
+|   |-- configuracoes.php
 |   |-- cancelar_agendamento.php
 |   |-- logout.php
 |   `-- img/
@@ -167,6 +184,13 @@ Objetos criados:
 - view `vw_agendamentos`;
 - view `vw_medicos`;
 - registros iniciais para testes.
+
+A tabela `usuario` também armazena preferências e dados visuais do perfil:
+
+| Campo | Finalidade |
+|---|---|
+| `max_agendamentos_dia` | Preferência de quantidade máxima de agendamentos visíveis por dia no calendário. |
+| `foto` | Foto de perfil armazenada em base64. |
 
 Configuração local usada atualmente:
 
@@ -281,6 +305,9 @@ curl -X POST "http://localhost:3000/api/agendamentos" \
 
 - Padronização da sidebar entre as telas principais.
 - Criação da tela de cadastro de especialidades.
+- Criação da tela de configurações do usuário.
+- Inclusão de foto de perfil no dropdown das telas principais.
+- Atualização da tabela `usuario` com campos de preferência e foto.
 - Atualização do cadastro de médicos com filtros, modal e alteração de status.
 - Integração do calendário com a view de agendamentos.
 - Confirmações de cancelamento, exclusão e alteração de status com SweetAlert2.
@@ -291,6 +318,7 @@ curl -X POST "http://localhost:3000/api/agendamentos" \
 - As credenciais de banco ainda estão definidas diretamente nos arquivos de conexão.
 - O arquivo `www/cancelar_agendamento.php` retorna sucesso, mas o bloco que atualiza o banco ainda está comentado.
 - A tela de agendamentos possui integrações em andamento e alguns trechos marcados como `TODO`.
+- A preferência `max_agendamentos_dia` é salva em `usuario`, mas o calendário ainda usa o limite fixo de 3 cards por dia em `www/principal.php`.
 - A documentação considera o estado atual da branch `main`.
 
 ## Objetivo Acadêmico
