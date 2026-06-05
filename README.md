@@ -2,6 +2,11 @@
 
 O **MediAgenda** é um sistema web para gerenciamento e agendamento de consultas médicas. O projeto foi desenvolvido com finalidade acadêmica na disciplina de Programação Web e reúne uma aplicação principal em PHP, banco de dados MySQL/MariaDB e um módulo complementar em Node.js com API REST.
 
+## 👥 Integrantes
+* Alessandro Cecilio
+* João Paulo Borges
+* João Victor Dizaró
+
 ## O Que o Sistema Faz
 
 O sistema organiza o fluxo básico de uma agenda clínica, permitindo que o usuário:
